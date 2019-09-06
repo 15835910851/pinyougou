@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- 页面meta -->
+    <meta charset="GBK">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>广告管理</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+	<link rel="stylesheet" type="text/css" href="../js/webuploader/webuploader.css">
+	<script type="text/javascript" src="../js/plugins/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../js/webuploader/webuploader.js"></script>
+
+
+    <link rel="stylesheet" href="../plugins/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../plugins/adminLTE/css/AdminLTE.css">
+    <link rel="stylesheet" href="../plugins/adminLTE/css/skins/_all-skins.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+	<script src="../plugins/jQuery/jquery-2.2.3.min.js"></script>
+    <script src="../plugins/bootstrap/js/bootstrap.min.js"></script>
+	<script src="../js/vue.min.js"></script>
+	<script src="../js/pager.js"></script>
+</head>
+<!-- 模板 -->
+<script type="text/template" id="template_pagination">
+	<nav>
+		<ul class="pagination">
+			<li :class="{'disabled': current == 1}"><a href="javascript:;" v-on:click="setCurrent(1)"> 首页 </a></li>
+			<li id="s3" :class="{'disabled': current == 1}"><a href="javascript:;" v-on:click="setCurrent(current - 1)"> 上一页 </a></li>
+			<li v-for="p in grouplist" :class="{'active': current == p.val}"><a href="javascript:;" v-on:click="setCurrent(p.val)"> {{ p.text }} </a></li>
+			<li :class="{'disabled': current == page}"><a href="javascript:;" v-on:click="setCurrent(current + 1)"> 下一页</a></li>
+			<li :class="{'disabled': current == page}"><a href="javascript:;" v-on:click="setCurrent(page)"> 尾页 </a></li>
+		</ul>
+		<ul class="pagination pull-right">
+			<li><span> 共 {{ total }}  条数据 </span></li>
+			<li><span> 每页显示 {{ display }}  条数据 </span></li>
+			<li><span> 共 {{ page }} 页 </span></li>
+			<li><span> 当前第 {{ current }} 页 </span></li>
+		</ul>
+	</nav>
+</script>
+<body class="hold-transition skin-red sidebar-mini">
+  <!-- .box-body -->
+                
+                    <div class="box-header with-border">
+                        <h3 class="box-title">广告管理</h3>
+                    </div>
+
+                    <div class="box-body">
+
+                        <!-- 数据表格 -->
+                        <div class="table-box" id="showTabs">
+
+                            <!--工具栏-->
+                            <div class="pull-left">
+                                <div class="form-group form-inline">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-default" title="新建" onclick="addContent()" data-toggle="modal" data-target="#editModal" ><i class="fa fa-file-o"></i> 新建</button>
+                                        <button type="button" class="btn btn-default" title="删除" onclick="deleteContent()" ><i class="fa fa-trash-o"></i> 删除</button>
+                                        <button type="button" class="btn btn-default" title="开启" onclick='confirm("你确认要开启吗？")'><i class="fa fa-check"></i> 开启</button>
+                                        <button type="button" class="btn btn-default" title="屏蔽" onclick='confirm("你确认要屏蔽吗？")'><i class="fa fa-ban"></i> 屏蔽</button>
+                                        <button type="button" class="btn btn-default" title="刷新" onclick="window.location.reload();"><i class="fa fa-refresh"></i> 刷新</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="box-tools pull-right">
+                                <div class="has-feedback">
+							                                  
+                                </div>
+                            </div>
+                            <!--工具栏/-->
+
+			                  <!--数据列表-->
+			                  <table id="dataList" class="table table-bordered table-striped table-hover dataTable">
+			                      <thead>
+			                          <tr>
+			                              <th class="" style="padding-right:0px">
+			                                  <input id="selall" type="checkbox" class="icheckbox_square-blue">
+			                              </th> 
+										  <th class="sorting_asc">广告ID</th>
+									      <th class="sorting">分类</th>
+									      <th class="sorting">标题</th>
+									      <th class="sorting">URL</th>		
+									      <th class="sorting">图片</th>	
+									      <th class="sorting">排序</th>
+									      <th class="sorting">是否有效</th>											     						      							
+					                      <th class="text-center">操作</th>
+			                          </tr>
+			                      </thead>
+			                      <tbody>
+			                          <tr v-for="e in dataWhereList">
+			                              <td><input :value="e.contentBean.id" v-model="contentVue.ids" name="hobby" type="checkbox"></td>
+				                          <td>{{e.contentBean.id}}</td>
+									      <td>{{e.contentCategoryBean.name}}</td>
+									      <td>{{e.contentBean.title}}</td>
+									      <td>{{e.contentBean.url}}</td>
+									      <td>
+									      	<img alt="" :src="e.contentBean.pic" width="100px" height="50px">
+									      </td>
+									      <td>{{e.contentBean.sortOrder}}</td>
+									      <td>{{e.contentBean.status == 1?'有效':'无效'}}</td>
+		                                  <td class="text-center">                                           
+		                                 	  <button type="button" class="btn bg-olive btn-xs" data-toggle="modal" @click="findOne(e.contentBean.id)" data-target="#editModal">修改</button>
+		                                  </td>
+			                          </tr>
+			                      </tbody>
+			                  </table>
+			                  <!--数据列表/--> 
+                        </div>
+                        <!-- 数据表格 /-->
+						<!-- 分页div组件 -->
+						<div>
+							<div id="app">
+								<div class="container">
+									<pagination :total="total" :current.sync="current" v-on:pagechange="pagechange"></pagination>
+								</div>
+							</div>
+						</div>
+                     </div>
+                    <!-- /.box-body -->
+
+		
+<!-- 编辑窗口 -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" >
+	<div class="modal-content">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			<h3 id="myModalLabel">广告编辑</h3>
+		</div>
+		<div class="modal-body" id="addTable">
+			<form id="contentForm">
+				<input type="text" v-model="contentBean.id" style="display: none" id="id"/>
+			<table class="table table-bordered table-striped"  width="800px">
+				<tr>
+		      		<td>广告分类</td>
+		      		<td>
+		      			<select id="category_id"  v-model="contentBean.categoryId" class="form-control" >
+							<option >--请选择--</option>
+							<option id="s2"  v-for="e in findAllList" :value="e.id">{{e.name}}</option>
+		                </select>
+		      		</td>
+		      	</tr>
+		      	<tr>
+		      		<td>标题</td>
+		      		<td><input  class="form-control" id="title" v-model="contentBean.title" placeholder="标题" >  </td>
+		      	</tr>
+			    <tr>
+		      		<td>URL</td>
+		      		<td><input  class="form-control" id="url" v-model="contentBean.url" placeholder="URL" >  </td>
+		      	</tr>	
+		      	<tr>
+		      		<td>排序</td>
+		      		<td><input  class="form-control" id="sort_order" v-model="contentBean.sortOrder" placeholder="排序" >  </td>
+		      	</tr>			      	
+		      	<tr>
+		      		<td>广告图片</td>
+		      		<td>
+						<div id="uploadimg">
+							<div id="fileList" class="uploader-list"></div>
+							<div id="imgPicker">选择图片</div>
+						</div>
+		      		</td>
+		      	</tr>	      
+		      	<tr>
+		      		<td>是否有效</td>
+		      		<td>
+		      		   <input type="checkbox" v-model="contentBean.status" id="status" class="icheckbox_square-blue" >
+		      		</td>
+		      	</tr>  	
+			 </table>				
+			</form>
+		</div>
+		<div class="modal-footer">						
+			<button class="btn btn-success" data-dismiss="modal" onclick="addOrUpdate()" aria-hidden="true">保存</button>
+			<button class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</button>
+		</div>
+	  </div>
+	</div>
+</div>
+
+</body>
+<script type="application/javascript">
+	var vm;
+	var  contentVue = new Vue({
+		el:'#addTable',
+		data:{
+			contentBean:{
+				id:'',
+				categoryId:'',
+				pic:'',
+				sortOrder:'',
+				status:'',
+				title:'',
+				url:''
+			},
+			findAllList:'',
+			ids:[]
+		}
+	})
+	$(function () {
+		whereList();
+		selectList();
+	})
+	findOne = function(id) {
+		$.post("../content/findOne.do",{id:id},function (data) {
+			if (data.status != 1) {
+				data.status = false
+			}
+			contentVue.contentBean = data
+		})
+	}
+	deleteContent = function(){
+		var idds = contentVue.ids.join(',');
+		$.post("../content/delete.do",{ids:idds},function (data) {
+			alert(data.message)
+			whereList1();
+		})
+	}
+	selectList = function(){
+		$.post("../contentCategory/findAll.do",{},function (data) {
+			contentVue.findAllList = data
+		})
+	}
+	addOrUpdate = function () {
+		//====================================================
+		alert(contentVue.contentBean.categoryId)
+		$.ajax({
+			url:'../content/addOrUpdate.do',
+			type:'post',
+			data:contentVue.contentBean,
+			dataType:'json',
+			success:function(data) {
+				alert(data.message);
+				whereList1();
+			},
+			error:function (data) {
+				alert(data.message);
+			}
+
+		})
+	}
+	whereList = function (page) {
+		if (page == null) {
+			page = 1;
+		}
+		$.post("../content/findAllWhere.do",{page:page,rows:5,t:new Date()},function (data) {
+			vm = new Vue({
+				el:'#showTabs',
+				data:{
+					dataWhereList:data.rows,
+					dangPage:data.dangPage,
+					sumCount : data.total,
+					sumPage: data.sumPage
+				}
+			})
+			vm1=new Vue({
+				el: '#app',
+				data: {
+					total: vm.sumCount,     // 记录总条数
+					display: 3,   // 每页显示条数
+					current: vm.dangPage ,    // 当前第n页 ， 也可以 watch current 的变化
+					page : vm.sumPage
+				},
+				methods: {
+					pagechange: function (p) {
+						this.current = p;// 页码改变event ， p 为新的 current
+						console.log('pagechange', p);
+						whereList1(vm1.current);
+					}
+				}
+			});
+		})
+	}
+	whereList1 = function (page) {
+		if (page == null) {
+			page = 1;
+		}
+		$.post("../content/findAllWhere.do",{page:page,rows:5,t:new Date()},function (data) {
+					vm.dataWhereList = data.rows;
+		})
+	}
+	addContent = function () {
+		contentVue.contentBean = {
+					id:'',
+					categoryId:'',
+					pic:'',
+					sortOrder:'',
+					status:'',
+					title:'',
+					url:''
+		}
+	}
+</script>
+<script type="text/javascript">
+	var uploader = WebUploader.create({
+		auto: true, // 选完文件后，是否自动上传
+		swf: '../js/webuploader/Uploader.swf', // swf文件路径
+		server: '../uploadFile.do', // 文件接收服务端
+		pick: '#imgPicker', // 选择文件的按钮。可选
+		// 只允许选择图片文件。
+		accept: {
+			title: 'Images',
+			extensions: 'gif,jpg,jpeg,bmp,png',
+			mimeTypes: 'image/*'
+		}
+	});
+	uploader.on( 'fileQueued', function( file ) {
+		var $list = $("#fileList"),
+				$li = $(
+						'<div id="' + file.id + '" class="file-item thumbnail">' +
+						'<img>' +
+						'<div class="info">' + file.name + '</div>' +
+						'</div>'
+				),
+				$img = $li.find('img');
+
+
+		// $list为容器jQuery实例
+		$list.append( $li );
+
+		// 创建缩略图
+		uploader.makeThumb( file, function( error, src ) {
+			if ( error ) {
+				$img.replaceWith('<span>不能预览</span>');
+				return;
+			}
+
+			$img.attr( 'src', src );
+		}, 100, 100 ); //100x100为缩略图尺寸
+	});
+	// 文件上传过程中创建进度条实时显示。
+	uploader.on( 'uploadProgress', function( file, percentage ) {
+		var $li = $( '#'+file.id ),
+				$percent = $li.find('.progress span');
+
+		// 避免重复创建
+		if ( !$percent.length ) {
+			$percent = $('<p class="progress"><span></span></p>')
+					.appendTo( $li )
+					.find('span');
+		}
+
+		$percent.css( 'width', percentage * 100 + '%' );
+	});
+
+	// 文件上传成功，给item添加成功class, 用样式标记上传成功。
+	uploader.on( 'uploadSuccess', function( file, res ) {
+		//console.log(res.message);//这里可以得到上传后的文件路径
+		alert(res.message)
+		$("#pic").val()
+		contentVue.contentBean.pic = res.message
+		$( '#'+file.id ).addClass('upload-state-done');
+	});
+
+	// 文件上传失败，显示上传出错。
+	uploader.on( 'uploadError', function( file ) {
+		var $li = $( '#'+file.id ),
+				$error = $li.find('div.error');
+
+		// 避免重复创建
+		if ( !$error.length ) {
+			$error = $('<div class="error"></div>').appendTo( $li );
+		}
+
+		$error.text('上传失败');
+	});
+
+	// 完成上传完了，成功或者失败，先删除进度条。
+	uploader.on( 'uploadComplete', function( file ) {
+		$( '#'+file.id ).find('.progress').remove();
+	});
+</script>
+</html>
